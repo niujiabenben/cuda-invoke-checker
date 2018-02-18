@@ -8,14 +8,17 @@ CFLAGS := -g -Wall -fpic -O2
 
 NVCC := nvcc
 NVCCFLAGS := -ccbin=$(CC) $(foreach FLAG, $(CFLAGS), -Xcompiler $(FLAG))
-CUDA_ARCH := -gencode arch=compute_35,code=sm_35
+CUDA_ARCH := -gencode arch=compute_35,code=sm_35 \
+             -gencode arch=compute_50,code=sm_50 \
+             -gencode arch=compute_52,code=sm_52 \
+             -gencode arch=compute_61,code=sm_61
 
 INCDIR := include
 SRCDIR := src
 TOOLSDIR := tools
 BUILDDIR := build
 
-INCLUDE := $(INCDIR) /usr/local/cuda/include
+INCLUDE := $(INCDIR) /usr/local/cuda/include /usr/local/cuda/samples/common/inc
 LIBRARY := /usr/local/cuda/lib64
 LIBS := dl m z rt glog cudart cublas curand
 
