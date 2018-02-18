@@ -1,6 +1,4 @@
-#include <iostream>
-#include <cuda_runtime.h>
-
+#include "common.h"
 
 void add_host(const int* a, const int* b, int* c, const int N) {
   for (int i = 0; i < N; ++i) {
@@ -16,6 +14,8 @@ void add_device(const int* a, const int* b, int* c, const int N) {
 }
 
 int main(int argc, char *argv[]) {
+  google::InitGoogleLogging(argv[0]);
+  google::LogToStderr();
   const int NUM = 100;
 
   // Allocate memory on host
@@ -35,37 +35,29 @@ int main(int argc, char *argv[]) {
   int* a_device = NULL;
   int* b_device = NULL;
   int* c_device = NULL;
-  cudaMalloc(&a_device, bytes);
-  cudaMalloc(&b_device, bytes);
-  cudaMalloc(&c_device, bytes);
+  CUDA_CHECK(cudaMalloc(&a_device, bytes));
+  CUDA_CHECK(cudaMalloc(&b_device, bytes));
+  CUDA_CHECK(cudaMalloc(&c_device, bytes));
   
   // Copy data from host to device
-  cudaMemcpy(a_device, a_host, bytes, cudaMemcpyHostToDevice);
-  cudaMemcpy(b_device, b_host, bytes, cudaMemcpyHostToDevice);
+  CUDA_CHECK(cudaMemcpy(a_device, a_host, bytes, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(b_device, b_host, bytes, cudaMemcpyHostToDevice));
 
   // Call "kernel" routine to execute on GPU
-  add_device<<<1, NUM>>>(a_device, b_device, c_device, NUM);
+  CUKERNEL_CHECK((add_device<<<1, NUM>>>(a_device, b_device, c_device, NUM)));
 
   // copy result from device to host
-  cudaMemcpy(d_host, c_device, bytes, cudaMemcpyDeviceToHost);
+  CUDA_CHECK(cudaMemcpy(d_host, c_device, bytes, cudaMemcpyDeviceToHost));
 
   // Call host code to execute on CPU
   add_host(a_host, b_host, c_host, NUM);
 
   // Check the results
-  bool is_equal = true;
-  for (int i = 0; i < NUM && is_equal; ++i) {
-    if (c_host[i] != d_host[i]) {
-      is_equal = false;
-    }
+  for (int i = 0; i < NUM; ++i) {
+    CHECK_EQ(c_host[i], d_host[i])
+        << "check failed at " << i << ": " << c_host[i] << " vs " << d_host[i];
   }
-
-  // Print check result
-  if (is_equal) {
-    std::cout << "check succeeded!" << std::endl;
-  } else {
-    std::cout << "check failed!" << std::endl;
-  }
+  LOG(INFO) << "check passed";
 
   // Free memory on host
   delete[] a_host;
@@ -74,9 +66,9 @@ int main(int argc, char *argv[]) {
   delete[] d_host;  
 
   // free memset on device
-  cudaFree(a_device);
-  cudaFree(b_device);
-  cudaFree(c_device);
-        
+  CUDA_CHECK(cudaFree(a_device));
+  CUDA_CHECK(cudaFree(b_device));
+  CUDA_CHECK(cudaFree(c_device));
+
   return 0;
 }

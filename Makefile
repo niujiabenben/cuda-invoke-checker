@@ -4,7 +4,7 @@
 ################################################################################
 
 CC := g++
-CFLAGS := -g -Wall -fpic -O2
+CFLAGS := -g -Wall -fpic -O2 -Wno-unused-function
 
 NVCC := nvcc
 NVCCFLAGS := -ccbin=$(CC) $(foreach FLAG, $(CFLAGS), -Xcompiler $(FLAG))

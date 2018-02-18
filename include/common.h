@@ -6,10 +6,10 @@
 #include <cuda_runtime.h>
 #include <glog/logging.h>
 
-//// This must be placed after all cuda-related headers.
+// This must be placed after all cuda-related headers.
 #include <helper_cuda.h>
 
-//// Disallow copy and assignment operations for a class.
+// Disallow copy and assignment operations for a class.
 #ifndef DISALLOW_COPY_AND_ASSIGN
 #define DISALLOW_COPY_AND_ASSIGN(classname) \
   private:                                  \
@@ -17,7 +17,7 @@
   classname& operator=(const classname&)
 #endif
 
-//// CUDA: common function checker
+// CUDA: common function checker
 #ifndef CUDA_CHECK
 #define CUDA_CHECK(condition)                 \
   do {                                        \
@@ -27,7 +27,7 @@
   } while (0)
 #endif
 
-//// CUDA: cuBLAS function checker
+// CUDA: cuBLAS function checker
 #ifndef CUBLAS_CHECK
 #define CUBLAS_CHECK(condition)                \
   do {                                         \
@@ -37,7 +37,7 @@
   } while (0)
 #endif
 
-//// CUDA: cuRAND function checker
+// CUDA: cuRAND function checker
 #ifndef CURAND_CHECK
 #define CURAND_CHECK(condition)                \
   do {                                         \
@@ -47,7 +47,18 @@
   } while (0)
 #endif
 
-//// CUDA: grid stride looping
+// CUDA: kernel function checker
+#ifndef CUKERNEL_CHECK
+#define CUKERNEL_CHECK(kernel_function)         \
+  do {                                          \
+    kernel_function;                            \
+    cudaError_t error = cudaGetLastError();     \
+    CHECK_EQ(error, cudaSuccess)                \
+        << " " << _cudaGetErrorEnum(error);     \
+  } while (0)
+#endif
+
+// CUDA: grid stride looping
 #ifndef CUDA_KERNEL_LOOP
 #define CUDA_KERNEL_LOOP(i, n)                        \
   for (int i = blockIdx.x * blockDim.x + threadIdx.x; \
@@ -55,13 +66,13 @@
        i += blockDim.x * gridDim.x)
 #endif
 
-//// CUDA: loop helper 2D
+// CUDA: loop helper 2D
 #define CUDA_GET_INDEX_2D_0(index, dimen0, dimen1) \
   ((index) / (dimen1))
 #define CUDA_GET_INDEX_2D_1(index, dimen0, dimen1) \
   ((index) % (dimen1))
 
-//// CUDA: loop helper 3D
+// CUDA: loop helper 3D
 #define CUDA_GET_INDEX_3D_0(index, dimen0, dimen1, dimen2) \
   ((index) / ((dimen1) * (dimen2)))
 #define CUDA_GET_INDEX_3D_1(index, dimen0, dimen1, dimen2) \
@@ -69,10 +80,10 @@
 #define CUDA_GET_INDEX_3D_2(index, dimen0, dimen1, dimen2) \
   ((index) % (dimen2))
 
-//// CUDA: thread number configuration.
+// CUDA: thread number configuration.
 const int CUDA_NUM_THREADS = 1024;
 
-//// CUDA: number of blocks for threads.
+// CUDA: number of blocks for threads.
 inline int CUDA_GET_BLOCKS(const int N) {
   int cuda_max_blocks = 65535;
   int required_blocks = (N + CUDA_NUM_THREADS - 1) / CUDA_NUM_THREADS;

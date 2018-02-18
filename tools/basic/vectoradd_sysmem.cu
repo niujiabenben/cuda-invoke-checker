@@ -1,4 +1,3 @@
-#include <iostream>
 #include "common.h"
 #include "sync_memory.h"
 
@@ -16,6 +15,8 @@ void add_device(const int* a, const int* b, int* c, const int N) {
 }
 
 int main(int argc, char *argv[]) {
+  google::InitGoogleLogging(argv[0]);
+  google::LogToStderr();
   const int NUM = 100;
   SyncMemory<int> a(NUM), b(NUM), c(NUM);
 
@@ -35,8 +36,8 @@ int main(int argc, char *argv[]) {
   int* c_device = c.mutable_gpu_data();
 
   // Call "kernel" routine to execute on GPU
-  add_device<<<CUDA_GET_BLOCKS(NUM), CUDA_NUM_THREADS>>>(
-      a_device, b_device, c_device, NUM);
+  CUKERNEL_CHECK((add_device<<<CUDA_GET_BLOCKS(NUM), CUDA_NUM_THREADS>>>(
+      a_device, b_device, c_device, NUM)));
 
   // Call host code to execute on CPU
   int d_host[NUM];
@@ -46,19 +47,11 @@ int main(int argc, char *argv[]) {
   const int* c_host = c.cpu_data();
 
   // Check the results
-  bool is_equal = true;
-  for (int i = 0; i < NUM && is_equal; ++i) {
-    if (c_host[i] != d_host[i]) {
-      is_equal = false;
-    }
+  for (int i = 0; i < NUM; ++i) {
+    CHECK_EQ(c_host[i], d_host[i])
+        << "check failed at " << i << ": " << c_host[i] << " vs " << d_host[i];
   }
-
-  // Print check result
-  if (is_equal) {
-    std::cout << "check succeeded!" << std::endl;
-  } else {
-    std::cout << "check failed!" << std::endl;
-  }
+  LOG(INFO) << "check passed";
 
   return 0;
 }
